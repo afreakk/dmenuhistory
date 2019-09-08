@@ -2,12 +2,15 @@
 ## Works with `dmenu`, `fzf`, `rofi -dmenu` etc.
 ### WIP
 
+#### Insallation
+compile and put dmenuhist in path
+
 #### Example usages
 
 ##### Show all git projects using locate, select using fzf, cache history to ~/cache/gitprojects, cd to directory and open in vim
 ```
 #!/bin/bash
-project=$(locate -r '\.git$'| sed 's/....$//' | ./dmenuhist ~/.cache/gitprojects fzf)
+project=$(locate -r '\.git$'| sed 's/....$//' | dmenuhist ~/.cache/gitprojects fzf)
 cd $project
 vim .
 ```
