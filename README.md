@@ -1,4 +1,4 @@
-# dmenu history caching, shows most frequent selected fist
+# dmenu history caching, shows most frequently selected first
 ## Works with `dmenu`, `fzf`, `rofi -dmenu` etc.
 ### WIP
 
