@@ -14,18 +14,15 @@ spanAndRemoveFirst p xs@(x:xs')
             | otherwise =  ([], drop 1 xs)
                            where (ys,zs) = spanAndRemoveFirst p xs'
 
-applyHistory histMap ioLine = (sortValue, ioLine)
+applyHistMap histMap ioLine = (sortValue, ioLine)
     where sortValue = Map.findWithDefault 0 ioLine histMap
 
-getSorted histMap
-    = (map snd)
+sortIoByHistMap histMap
+    = unlines
+    . (map snd)
     . (sortBy ((flip compare) `on` fst))
-    . map (applyHistory histMap)
-
-histLineToMap histLine acc =
-    Map.insert k vi acc
-        where (v, k) = spanAndRemoveFirst Data.Char.isAlphaNum histLine
-              vi = read v :: Integer
+    . map (applyHistMap histMap)
+    . lines
 
 readFileIfExists filePath = do
     fileExists <- doesFileExist filePath
@@ -36,19 +33,36 @@ readFileIfExists filePath = do
 updateHistMap histMap [] = histMap
 updateHistMap histMap selectedEntry = Map.insertWith (+) (init selectedEntry) 1 histMap
 
-main = do
-    (histFilePath:(cmd:args)) <- getArgs
-    histContents <- readFileIfExists histFilePath
-    let histLines = lines histContents
-    let histMap = foldr histLineToMap Map.empty histLines
-    ioContents <- getContents
-    let sortedLines = getSorted histMap $ lines ioContents
+histContentsToMap
+    = foldr
+        (\histLine acc ->
+            let (v, k) = spanAndRemoveFirst Data.Char.isAlphaNum histLine
+                vi = read v :: Integer in
+            Map.insert k vi acc) Map.empty
+    . lines
 
-    (Just fzfStdIn, Just fzfStdOut, _, _) <- createProcess (proc cmd args){ std_in = CreatePipe, std_out = CreatePipe }
-    hPutStr fzfStdIn $ unlines sortedLines
+histMapToContents
+    = unlines
+    . map (\(k,vi) -> (show vi) ++ " " ++ k)
+    . Map.toList
+
+main = do
+    (histFilePath:(cmd:cmdArgs)) <- getArgs
+
+    (Just fzfStdIn, Just fzfStdOut, _, _) <- createProcess (proc cmd cmdArgs){ std_in = CreatePipe, std_out = CreatePipe }
+
+    histContents <- readFileIfExists histFilePath
+    let histMap = histContentsToMap histContents
+
+    ioContents <- getContents
+    let sortedIoContent = sortIoByHistMap histMap ioContents
+
+    hPutStr fzfStdIn sortedIoContent
     hClose fzfStdIn
+
     selectedEntry <- hGetContents fzfStdOut
     let updatedHistMap = updateHistMap histMap selectedEntry
-    writeFile histFilePath $ unlines $ map (\(k,v) -> (show v) ++ " " ++ k) $ Map.toList updatedHistMap
+
+    writeFile histFilePath $ histMapToContents updatedHistMap
     putStr selectedEntry
 
