@@ -69,15 +69,15 @@ main = do
     selectedEntry <- hGetContents cmdStdOut
     let updatedHistMap = updateHistMap histMap selectedEntry
     
-    writeToHistory histFilePath $ histMapToContents updatedHistMap
+    try (writeToHistory histFilePath $ histMapToContents updatedHistMap) >>= printIfException
     hClose cmdStdOut
 
     putStr selectedEntry
 
 writeToHistory histFilePath contents = do
     let tempFilePath = histFilePath ++ ".temp"
-    try (writeFile tempFilePath contents) >>= printIfException
-    try (renameFile tempFilePath histFilePath) >>= printIfException
+    writeFile tempFilePath contents
+    renameFile tempFilePath histFilePath
 
 printIfException :: Either IOError a -> IO ()
 printIfException (Right _) = return ()
