@@ -6,6 +6,8 @@ import Data.List (sortBy)
 import Data.Function (on)
 import System.Environment
 import System.Directory
+import Control.Exception (try)
+import GHC.IO.Exception (IOException(..))
 
 type HistMap = Map.Map String Integer
 
@@ -53,7 +55,6 @@ histMapToContents
 main = do
     (histFilePath:(cmd:cmdArgs)) <- getArgs
 
-    -- | TODO: issue, try opening multiple dmenuhistory without selecting anything with fzf.. it cannot read from histfile on susbsequent it seems
     (Just cmdStdIn, Just cmdStdOut, _, _) <- createProcess (proc cmd cmdArgs){ std_in = CreatePipe, std_out = CreatePipe }
 
     histContents <- readFileIfExists histFilePath
@@ -67,8 +68,26 @@ main = do
 
     selectedEntry <- hGetContents cmdStdOut
     let updatedHistMap = updateHistMap histMap selectedEntry
-
-    writeFile histFilePath $ histMapToContents updatedHistMap
+    
+    writeToHistory histFilePath $ histMapToContents updatedHistMap
     hClose cmdStdOut
+
     putStr selectedEntry
+
+writeToHistory histFilePath contents = do
+    let tempFilePath = histFilePath ++ ".temp"
+    try (writeFile tempFilePath contents) >>= printIfException
+    try (renameFile tempFilePath histFilePath) >>= printIfException
+
+printIfException :: Either IOError a -> IO ()
+printIfException (Right _) = return ()
+printIfException (Left e) =  hPutStrLn stderr $ unlines
+    ["Could not write to history cache.",
+    "Probarbly because you launced multiple instances of dmenuhist at the same time.",
+    "No worries though, you only lost the last history entry.",
+    "Error details:",
+    "ioe_filename = " ++ (show $ ioe_filename e),
+    "ioe_description = " ++ ( show $ ioe_description e),
+    "ioe_errno = " ++ (show $ ioe_errno e)]
+
 
