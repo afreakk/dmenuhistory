@@ -22,7 +22,7 @@ sortIoByHistMap :: HistMap -> String -> String
 sortIoByHistMap histMap
     = unlines
     . map snd
-    . sortBy ((flip compare) `on` fst)
+    . sortBy (flip compare `on` fst)
     . map (\ioLine -> let sortValue = Map.findWithDefault 0 ioLine histMap in (sortValue, ioLine))
     . lines
 
@@ -41,8 +41,8 @@ histContentsToMap :: String -> HistMap
 histContentsToMap
     = foldr
         (\histLine acc ->
-            let (v, k) = splitLineByFrequencyAndValue histLine
-                vi = read v :: Integer in
+            let (v, k)  = splitLineByFrequencyAndValue histLine
+                vi      = read v :: Integer in
             Map.insert k vi acc) Map.empty
     . lines
 
@@ -83,11 +83,11 @@ printIfException :: Either IOError a -> IO ()
 printIfException (Right _) = return ()
 printIfException (Left e) =  hPutStrLn stderr $ unlines
     ["Could not write to history cache.",
-    "Probarbly because you launced multiple instances of dmenuhist at the same time.",
+    "Probably because you opened multiple instances of dmenuhist at the same time.",
     "No worries though, you only lost the last history entry.",
     "Error details:",
-    "ioe_filename = " ++ (show $ ioe_filename e),
-    "ioe_description = " ++ ( show $ ioe_description e),
-    "ioe_errno = " ++ (show $ ioe_errno e)]
+    "ioe_filename = " ++ show (ioe_filename e),
+    "ioe_description = " ++ show (ioe_description e),
+    "ioe_errno = " ++ show (ioe_errno e)]
 
 
