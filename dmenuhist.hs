@@ -27,11 +27,7 @@ sortIoByHistMap histMap
     . lines
 
 readFileIfExists :: FilePath -> IO String
-readFileIfExists filePath = do
-    fileExists <- doesFileExist filePath
-    if fileExists
-        then readFile filePath
-        else return ""
+readFileIfExists filePath = doesFileExist filePath >>= \exists -> if exists then readFile filePath else pure ""
 
 updateHistMap :: HistMap -> String -> HistMap
 updateHistMap histMap [] = histMap
@@ -52,32 +48,22 @@ histMapToContents
     . map (\(k, vi) -> show vi ++ " " ++ k)
     . Map.toList
 
-main = do
-    (histFilePath:(cmd:cmdArgs)) <- getArgs
-
-    (Just cmdStdIn, Just cmdStdOut, _, _) <- createProcess (proc cmd cmdArgs){ std_in = CreatePipe, std_out = CreatePipe }
-
-    histContents <- readFileIfExists histFilePath
-    let histMap = histContentsToMap histContents
-
-    ioContents <- getContents
-    let sortedIoContent = sortIoByHistMap histMap ioContents
-
-    hPutStr cmdStdIn sortedIoContent
-    hClose cmdStdIn
-
-    selectedEntry <- hGetContents cmdStdOut
-    let updatedHistMap = updateHistMap histMap selectedEntry
-    
-    try (writeToHistory histFilePath $ histMapToContents updatedHistMap) >>= printIfException
+main =
+    getArgs >>= \(histFilePath:(cmd:cmdArgs)) ->
+    createProcess (proc cmd cmdArgs){ std_in = CreatePipe, std_out = CreatePipe } >>= \(Just cmdStdIn, Just cmdStdOut, _, _) ->
+    histContentsToMap <$> (readFileIfExists histFilePath) >>= \histMap ->
+    sortIoByHistMap histMap <$> getContents >>= \sortedContent ->
+    hPutStr cmdStdIn sortedContent >>
+    hClose cmdStdIn >>
+    hGetContents cmdStdOut >>= \selectedEntry ->
+    try (writeToHistory histFilePath $ histMapToContents $ updateHistMap histMap selectedEntry) >>=
+    printIfException >>
+    putStr selectedEntry >>
     hClose cmdStdOut
 
-    putStr selectedEntry
-
-writeToHistory histFilePath contents = do
-    let tempFilePath = histFilePath ++ ".temp"
-    writeFile tempFilePath contents
-    renameFile tempFilePath histFilePath
+writeToHistory histFilePath contents =
+    writeFile tempFilePath contents >> renameFile tempFilePath histFilePath
+    where tempFilePath = histFilePath ++ ".temp"
 
 printIfException :: Either IOError a -> IO ()
 printIfException (Right _) = return ()
