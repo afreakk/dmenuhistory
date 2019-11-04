@@ -7,7 +7,7 @@ Compile and put dmenuhist in path
 
 #### Example usages
 
-##### Show all Git projects using locate, select using fzf, cache history to ~/.cache/gitprojects, cd to directory and open all files in it using Vim
+##### Show all Git projects using locate, select using fzf, cache history to ~/.cache/gitprojects, cd to directory and open its file listing in Vim
 ```
 #!/bin/bash
 project=$(locate -r '\.git$'| sed 's/....$//' | dmenuhist ~/.cache/gitprojects fzf)
