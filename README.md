@@ -2,12 +2,12 @@
 ## Works with `dmenu`, `fzf`, `rofi -dmenu` etc.
 ### WIP
 
-#### Insallation
-compile and put dmenuhist in path
+#### Installation
+Compile and put dmenuhist in path
 
 #### Example usages
 
-##### Show all git projects using locate, select using fzf, cache history to ~/.cache/gitprojects, cd to directory and open in vim
+##### Show all Git projects using locate, select using fzf, cache history to ~/.cache/gitprojects, cd to directory and open its file listing in Vim
 ```
 #!/bin/bash
 project=$(locate -r '\.git$'| sed 's/....$//' | dmenuhist ~/.cache/gitprojects fzf)
@@ -20,7 +20,7 @@ else
 fi
 ```
 
-##### Open some file in ~/.config with vim, save history to ~/.cache/configfilecache and open in vim.
+##### Open some file in ~/.config with Vim, save history to ~/.cache/configfilecache and open in Vim.
 ```
 find ~/.config -type f | dmenuhist ~/.cache/configfilecachex rofi -dmenu | xargs -o vim
 ```
