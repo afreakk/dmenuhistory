@@ -2,7 +2,7 @@ import           Data.Char
 import           System.IO
 import           System.Process
 import qualified Data.Map                      as Map
-import           Data.List                      ( sortBy )
+import           Data.List                      ( sortOn )
 import           Data.Function                  ( on )
 import           System.Environment
 import           System.Directory
@@ -11,23 +11,15 @@ import           GHC.IO.Exception               ( IOException(..) )
 
 type HistMap = Map.Map String Integer
 
-splitLineByFrequencyAndValue :: String -> (String, String)
-splitLineByFrequencyAndValue [] = ([], [])
-splitLineByFrequencyAndValue xs@(x : xs')
-  | Data.Char.isAlphaNum x = (x : ys, zs)
-  | otherwise              = ([], drop 1 xs)
-  where (ys, zs) = splitLineByFrequencyAndValue xs'
+splitLineByWeightAndName :: String -> (String, String)
+splitLineByWeightAndName [] = ([], [])
+splitLineByWeightAndName (x : xs) | Data.Char.isDigit x = (x : ys, zs)
+                                  | otherwise           = ([], xs)
+  where (ys, zs) = splitLineByWeightAndName xs
 
 sortIoByHistMap :: HistMap -> String -> String
-sortIoByHistMap histMap =
-  unlines
-    . map snd
-    . sortBy (flip compare `on` fst)
-    . map toWeightedTuple
-    . lines
- where
-  toWeightedTuple ioLine = (weight, ioLine)
-    where weight = Map.findWithDefault 0 ioLine histMap
+sortIoByHistMap histMap = unlines . sortOn (negate . getWeight) . lines
+  where getWeight ioLine = Map.findWithDefault 0 ioLine histMap
 
 readFileIfExists filePath = doesFileExist filePath >>= getFileContents
  where
@@ -42,10 +34,10 @@ updateHistMap histMap selectedEntry =
 histContentsToMap :: String -> HistMap
 histContentsToMap = foldr accHistMap Map.empty . lines
  where
-  accHistMap histLine = Map.insert k vi
+  accHistMap histLine = Map.insert name weight'
    where
-    (v, k) = splitLineByFrequencyAndValue histLine
-    vi     = read v :: Integer
+    (weight, name) = splitLineByWeightAndName histLine
+    weight'        = read weight :: Integer
 
 histMapToContents :: HistMap -> String
 histMapToContents = unlines . map mapToLine . Map.toList
@@ -83,5 +75,4 @@ printIfException (Left  e) = hPutStrLn stderr $ unlines
   , "ioe_description = " ++ show (ioe_description e)
   , "ioe_errno = " ++ show (ioe_errno e)
   ]
-
 
