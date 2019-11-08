@@ -32,6 +32,7 @@ sortIoByHistMap :: HistMap -> String -> String
 sortIoByHistMap histMap = unlines . sortOn (negate . getWeight) . lines
   where getWeight ioLine = Map.findWithDefault 0 ioLine histMap
 
+readFileIfExists :: FilePath -> IO String
 readFileIfExists filePath = doesFileExist filePath >>= getFileContents
  where
   getFileContents exists | exists    = readFile filePath
@@ -54,8 +55,20 @@ histMapToContents :: HistMap -> String
 histMapToContents = unlines . map mapToLine . Map.toList
   where mapToLine (name, weight) = show weight ++ " " ++ name
 
+getArguments :: IO (String, String, [String])
+getArguments = getArgs >>= validateArgs
+ where
+  validateArgs (histFilePath : cmd : cmdArgs) =
+    return (histFilePath, cmd, cmdArgs)
+  validateArgs _ =
+    error
+      $ "\nMissing historyFilePath or command to run.\n"
+      ++ "Usage: dmenuhist <historyFilePath> <dmenuCompatibleCommand>\n"
+      ++ "Example: echo -e \"Entry1\\nEntry2\\nEntry3\\nEntry4\" | dmenuhist ~/goofyHistory.txt rofi -dmenu\n"
+
+main :: IO ()
 main = do
-  (histFilePath : cmd : cmdArgs)        <- getArgs
+  (histFilePath, cmd, cmdArgs)          <- getArguments
   (Just cmdStdIn, Just cmdStdOut, _, _) <- createProcess (proc cmd cmdArgs)
     { std_in  = CreatePipe
     , std_out = CreatePipe
@@ -71,6 +84,7 @@ main = do
   putStr selectedEntry
   hClose cmdStdOut
 
+writeToHistory :: FilePath -> String -> IO ()
 writeToHistory histFilePath contents =
   writeFile tempFilePath contents >> renameFile tempFilePath histFilePath
   where tempFilePath = histFilePath ++ ".temp"
