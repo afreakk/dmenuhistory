@@ -1,11 +1,22 @@
-import           Data.Char
-import           System.IO
-import           System.Process
+import           Data.Char                      ( isDigit )
+import           System.IO                      ( hPutStr
+                                                , hPutStrLn
+                                                , hClose
+                                                , stderr
+                                                , hGetContents
+                                                )
+import           System.Process                 ( createProcess
+                                                , std_out
+                                                , std_in
+                                                , StdStream(CreatePipe)
+                                                , proc
+                                                )
 import qualified Data.Map                      as Map
 import           Data.List                      ( sortOn )
-import           Data.Function                  ( on )
-import           System.Environment
-import           System.Directory
+import           System.Environment             ( getArgs )
+import           System.Directory               ( doesFileExist
+                                                , renameFile
+                                                )
 import           Control.Exception              ( try )
 import           GHC.IO.Exception               ( IOException(..) )
 
@@ -13,8 +24,8 @@ type HistMap = Map.Map String Integer
 
 splitLineByWeightAndName :: String -> (String, String)
 splitLineByWeightAndName [] = ([], [])
-splitLineByWeightAndName (x : xs) | Data.Char.isDigit x = (x : ys, zs)
-                                  | otherwise           = ([], xs)
+splitLineByWeightAndName (x : xs) | isDigit x = (x : ys, zs)
+                                  | otherwise = ([], xs)
   where (ys, zs) = splitLineByWeightAndName xs
 
 sortIoByHistMap :: HistMap -> String -> String
@@ -41,10 +52,10 @@ histContentsToMap = foldr accHistMap Map.empty . lines
 
 histMapToContents :: HistMap -> String
 histMapToContents = unlines . map mapToLine . Map.toList
-  where mapToLine (k, vi) = show vi ++ " " ++ k
+  where mapToLine (name, weight) = show weight ++ " " ++ name
 
 main = do
-  (histFilePath : (cmd : cmdArgs))      <- getArgs
+  (histFilePath : cmd : cmdArgs)        <- getArgs
   (Just cmdStdIn, Just cmdStdOut, _, _) <- createProcess (proc cmd cmdArgs)
     { std_in  = CreatePipe
     , std_out = CreatePipe
