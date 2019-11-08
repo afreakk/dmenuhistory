@@ -1,6 +1,5 @@
 # dmenu history caching, shows most frequently selected first
 ## Works with `dmenu`, `fzf`, `rofi -dmenu` etc.
-### WIP
 
 #### Installation
 Compile using `ghc -O2 dmenuhist.hs` (No special dependencies other than haskell needed), then put `dmenuhist` executable in path 
