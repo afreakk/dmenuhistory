@@ -3,7 +3,7 @@
 ### WIP
 
 #### Installation
-Compile and put dmenuhist in path
+Compile (`ghc -o dmenuhist dmenuhist.hs` for exmaple) and put dmenuhist in path (No special dependencies other than haskell)
 
 #### Example usages
 
