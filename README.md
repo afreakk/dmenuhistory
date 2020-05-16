@@ -6,6 +6,12 @@ Compile using `ghc -O2 dmenuhist.hs` (No special dependencies other than haskell
 
 #### Example usages
 
+##### Add history to dmenu_run
+```
+#!/bin/sh
+dmenu_path | dmenuhist ~/.cache/dmenu_run_hist dmenu | ${SHELL:-"/bin/sh"} &
+```
+
 ##### Show all Git projects using locate, select using fzf, cache history to ~/.cache/gitprojects, cd to directory and open its file listing in Vim
 ```
 #!/bin/bash
