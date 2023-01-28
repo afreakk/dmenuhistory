@@ -3,7 +3,7 @@ import           System.IO                      ( hPutStr
                                                 , hPutStrLn
                                                 , hClose
                                                 , stderr
-                                                , hGetContents
+                                                , hGetLine
                                                 )
 import           System.Process                 ( createProcess
                                                 , std_out
@@ -41,7 +41,7 @@ readFileIfExists filePath = doesFileExist filePath >>= getFileContents
 updateHistMap :: HistMap -> String -> HistMap
 updateHistMap histMap [] = histMap
 updateHistMap histMap selectedEntry =
-  Map.insertWith (+) (init selectedEntry) 1 histMap
+  Map.insertWith (+) selectedEntry 1 histMap
 
 histContentsToMap :: String -> HistMap
 histContentsToMap = foldr accHistMap Map.empty . lines
@@ -77,7 +77,7 @@ main = do
   sortedContent <- sortIoByHistMap histMap <$> getContents
   hPutStr cmdStdIn sortedContent
   hClose cmdStdIn
-  selectedEntry <- hGetContents cmdStdOut
+  selectedEntry <- hGetLine cmdStdOut
   let updatedHistMap = updateHistMap histMap selectedEntry
   let histMapContent = histMapToContents updatedHistMap
   try (writeToHistory histFilePath histMapContent) >>= printIfException
